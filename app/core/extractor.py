@@ -19,4 +19,4 @@ class AttributeExtractor(dspy.Module):
         self.program = dspy.Predict(ExtractAttributes)
 
     def forward(self, query):
-        return self.program(query=query)
+        return self.program(query=query) 

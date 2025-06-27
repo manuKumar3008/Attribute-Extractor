@@ -83,32 +83,32 @@ if user_input:
         errors = st.session_state.errors
 
         if result["firstname"] == "not mentioned" or "First name must be alphabetic." in errors:
-            new_follow_ups.append("🧑 What is the first name?")
+            new_follow_ups.append("What is the first name?")
         if result["lastname"] == "not mentioned" or "Last name must be alphabetic." in errors:
-            new_follow_ups.append("🧑 What is the last name?")
+            new_follow_ups.append("What is the last name?")
         if result["start_date"] == "not mentioned":
-            new_follow_ups.append("📅 What is the start date of the document? (DD-MM-YYYY)")
+            new_follow_ups.append(" What is the start date of the document? (DD-MM-YYYY)")
         if result["end_date"] == "not mentioned":
-            new_follow_ups.append("📅 What is the end date of the document? (DD-MM-YYYY)")
+            new_follow_ups.append(" What is the end date of the document? (DD-MM-YYYY)")
         if result["year"] == "not mentioned":
-            new_follow_ups.append("📆 Which year is relevant to this document?")
+            new_follow_ups.append("Which year is relevant to this document?")
         if result["amount"] == "not mentioned" or "Amount must be numeric." in errors:
-            new_follow_ups.append("💰 What is the amount?")
+            new_follow_ups.append(" What is the amount?")
         if result["currency"] == "not mentioned" or "Currency must be 3-letter ISO code." in errors:
-            new_follow_ups.append("💱 What is the currency (3-letter code)?")
+            new_follow_ups.append(" What is the currency (3-letter code)?")
         if result["document_id"] == "not mentioned" or "Document ID must be exactly 6 alphanumeric characters." in errors:
-            new_follow_ups.append("🆔 What is the correct Document ID? (6 alphanumeric characters)")
+            new_follow_ups.append("What is the correct Document ID? (6 alphanumeric characters)")
         
 
         st.session_state.follow_ups = [f for f in new_follow_ups if f != st.session_state.current_question]
         st.session_state.current_question = st.session_state.follow_ups[0] if st.session_state.follow_ups else None
 
-        response = "✅ Updated. Here's what I have now:\n"
+        response = " Updated. Here's what I have now:\n"
         for k, v in result.items():
             response += f"- **{k}**: {v}\n"
 
         if st.session_state.current_question:
-            response += f"\n📝 {st.session_state.current_question}"
+            response += f"\n {st.session_state.current_question}"
 
         st.session_state.messages.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
@@ -116,14 +116,14 @@ if user_input:
 
 # --- Final Output ---
 if st.session_state.query_done and not st.session_state.follow_ups:
-    with st.expander("✅ Final Document Summary", expanded=True):
+    with st.expander(" Final Document Summary", expanded=True):
         st.json(st.session_state.result)
         if st.session_state.errors:
-            st.warning("⚠️ Errors:")
+            st.warning(" Errors:")
             for err in st.session_state.errors:
                 st.write("- " + err)
 
-    if st.button("🔄 Reset"):
+    if st.button(" Reset"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()

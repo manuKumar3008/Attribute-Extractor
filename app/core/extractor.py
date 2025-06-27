@@ -1,4 +1,3 @@
-# extractor.py
 import dspy
 from dspy.signatures import Signature
 

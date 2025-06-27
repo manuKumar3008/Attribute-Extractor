@@ -5,7 +5,6 @@ from app.core.followups import FollowUpGenerator
 from datetime import datetime
 import json
 
-
 def normalize(value):
     if value is None or str(value).strip().lower() in [
         "", "not mentioned", "not provided in the query.", "not specified in the query."
@@ -13,8 +12,7 @@ def normalize(value):
         return "not mentioned"
     return str(value).strip()
 
-
-def run_query(user_query, existing_data=None):
+def run_query(user_query, existing_data=None, field_being_asked=None):
     extractor = AttributeExtractor()
 
     try:
@@ -22,7 +20,6 @@ def run_query(user_query, existing_data=None):
     except Exception as e:
         raise RuntimeError(f"❌ Failed to get valid response from LM: {e}")
 
-    # Step 1: Extract and normalize fields
     extracted = {
         "firstname": normalize(getattr(raw_output, "firstname", None)),
         "lastname": normalize(getattr(raw_output, "lastname", None)),
@@ -33,13 +30,14 @@ def run_query(user_query, existing_data=None):
         "time_expression": getattr(raw_output, "time_expression", None),
     }
 
-    # Step 2: Merge with previously provided data
     if existing_data:
         for key, value in existing_data.items():
             if value != "not mentioned" and extracted.get(key) == "not mentioned":
                 extracted[key] = value
 
-    # Step 3: Infer start and end dates
+    if field_being_asked:
+        extracted[field_being_asked] = normalize(user_query)
+
     start_date, end_date = infer_dates(extracted.get("time_expression"), user_query)
     if existing_data:
         if existing_data.get("start_date") != "not mentioned" and start_date == "not mentioned":
@@ -47,13 +45,11 @@ def run_query(user_query, existing_data=None):
         if existing_data.get("end_date") != "not mentioned" and end_date == "not mentioned":
             end_date = existing_data["end_date"]
 
-    # Step 4: Derive year from end date
     try:
         year = datetime.strptime(end_date, "%d-%m-%Y").year if end_date != "not mentioned" else "not mentioned"
     except Exception:
         year = "not mentioned"
 
-    # Step 5: Final assembled result
     result = {
         "firstname": extracted["firstname"],
         "lastname": extracted["lastname"],
@@ -66,17 +62,18 @@ def run_query(user_query, existing_data=None):
         "document_id": extracted["document_id"],
     }
 
-    # Step 6: Validate final structure
     errors = validate_output(result)
 
-    # Step 7: Ask next follow-up (only one question)
     follow_ups = []
-    if any(v == "not mentioned" for v in result.values()) or errors:
+    next_field_to_ask = None
+    if errors:
         followup_model = FollowUpGenerator()
+        next_field_to_ask = errors[0]
         followup_output = followup_model.forward(
             extracted_data=json.dumps(result),
-            missing_fields=", ".join(errors) if errors else "Some fields are missing"
+            missing_fields=next_field_to_ask
         )
-        follow_ups.append(followup_output.next_question)
+        if followup_output.next_question:
+            follow_ups.append(followup_output.next_question)
 
-    return result, errors, follow_ups
+    return result, errors, follow_ups, next_field_to_ask
